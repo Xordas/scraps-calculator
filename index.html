@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraps Odds Calculator</title>
+    <style>
+        :root {
+        color-scheme: light dark; 
+        --bg-color: #ffffff;
+        --text-color: #1a1a1a;
+        --bg-color-button: #7c7c7c; 
+        --text-color-button: #1a1a1a; 
+        }
+
+        @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f5f5f5; 
+            --bg-color-button: rgb(59, 59, 59);
+            --text-color-button: #f5f5f5;
+            /* waow dark mode!!! */
+        }
+        }
+
+        body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        }
+
+        .Button {
+        background-color: var(--bg-color-button);
+        color: var(--text-color-button);
+        }
+    </style>
+</head>
+<body>
+    <h1>Scraps Odds Calculator</h1>
+    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p><br>
+
+    <p>Price per roll:</p>
+    <input type="text" id="PricePerRollInput" placeholder="Price per roll"> <br>
+    <p>Default roll chance:</p>
+    <input type="text" id="DefaultRollChanceInput" placeholder="Default roll chance"> <br>
+    <p>Price per upgrade:</p>
+    <input type="text" id="PricePerUpgradeInput" placeholder="Price per upgrade"> <br>
+    <p>Upgrade chance increase:</p>
+    <input type="text" id="UpgradeChanceIncreaseInput" placeholder="Upgrade chance increase"> <br>
+    <p>Target chance:</p>
+    <input type="text" id="TargetChanceInput" placeholder="Target chance"> <br><br>
+
+    <button class="Button" id="CalculateButton">Calculate</button>
+
+    <p id="Result"></p>
+    <p id="Result2"></p>
+    <p id="Result3"></p>
+
+    <!-- I know its not optimized but it work doesnt it? -->
+    <!-- Max performance isnt needed for a script like this -->
+    <script>
+
+        document.getElementById("CalculateButton").addEventListener("click", function() {
+            const PricePerRoll = parseFloat(document.getElementById("PricePerRollInput").value);
+            const DefaultRollChance = parseFloat(document.getElementById("DefaultRollChanceInput").value);
+            const PricePerUpgrade = parseFloat(document.getElementById("PricePerUpgradeInput").value);
+            const UpgradeChanceIncrease = parseFloat(document.getElementById("UpgradeChanceIncreaseInput").value);
+            const TargetChance = parseFloat(document.getElementById("TargetChanceInput").value);
+
+            if (isNaN(PricePerRoll) || isNaN(DefaultRollChance) || isNaN(PricePerUpgrade) ||
+                isNaN(UpgradeChanceIncrease) || isNaN(TargetChance)) {
+                document.getElementById("Result").textContent = "Please fill in all fields correctly.";
+                document.getElementById("Result2").textContent = "";
+                return;
+            }
+
+            const TargetDecimal = TargetChance / 100;
+
+            let BestCost = Infinity;
+            let BestUpgrades = 0;
+            let BestRolls = 0;
+            let BestChancePerRoll = 0;
+
+            // Upgrade till 100% per roll or higher than target chance
+            const MaxUpgrades = Math.ceil((100 - DefaultRollChance) / UpgradeChanceIncrease);
+
+            for (let Upgrades = 0; Upgrades <= MaxUpgrades; Upgrades++) {
+                let ChancePerRoll = DefaultRollChance + (Upgrades * UpgradeChanceIncrease);
+                if (ChancePerRoll > 100) ChancePerRoll = 100;
+
+                const P = ChancePerRoll / 100;
+
+                let RollsNeeded;
+
+                if (P === 1) {
+                    RollsNeeded = 1;
+                } else {
+                    RollsNeeded = Math.ceil(
+                        Math.log(1 - TargetDecimal) / Math.log(1 - P)
+                    );
+                }
+
+                const TotalCost = (Upgrades * PricePerUpgrade) + (RollsNeeded * PricePerRoll);
+
+                if (TotalCost < BestCost) {
+                    BestCost = TotalCost;
+                    BestUpgrades = Upgrades;
+                    BestRolls = RollsNeeded;
+                    BestChancePerRoll = ChancePerRoll;
+                }
+            }
+
+            document.getElementById("Result").textContent =
+                `Optimal strategy --> Upgrades: ${BestUpgrades}, Rolls: ${BestRolls}`;
+
+            document.getElementById("Result2").textContent =
+                `Total cost: ${BestCost.toFixed(2)} | Chance per roll: ${BestChancePerRoll.toFixed(2)}% | Total chance: ${( (1 - Math.pow(1 - (BestChancePerRoll / 100), BestRolls)) * 100 ).toFixed(2)}%`
+            
+            document.getElementById("Result3").textContent =
+                `Hours: ${(BestCost / 14).toFixed(2)} (T1), ${(BestCost / 16).toFixed(2)} (T2), ${(BestCost / 20).toFixed(2)} (T3), ${(BestCost / 24).toFixed(2)} (T4)`;
+        });
+
+
+    </script>
+</body>
+
+</html>
