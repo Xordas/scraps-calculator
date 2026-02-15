@@ -33,12 +33,37 @@
         color: var(--text-color-button);
         }
     </style>
+
+    <script>
+        if (localStorage.getItem("ga_disabled") !== "1") {
+            const script = document.createElement("script");
+            script.async = true;
+            script.src = `https://www.googletagmanager.com/gtag/js?id=G-TXDF9RQ82V`;
+            document.head.appendChild(script);
+
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = window.gtag || function(){dataLayer.push(arguments);};
+
+            gtag('js', new Date());
+            gtag('config', 'G-TXDF9RQ82V');
+        }
+
+        function gaOptout() {
+            if (localStorage.getItem("ga_disabled") !== "1") {
+                localStorage.setItem("ga_disabled", "1");
+                alert("Google Analytics has been disabled. Please refresh the page for the changes to take effect.");
+            } else if (localStorage.getItem("ga_disabled") === "1") {
+                localStorage.setItem("ga_disabled", "0");
+                alert("Google Analytics has been enabled. Please refresh the page for the changes to take effect.");
+
+            }
+        }
+    </script>
+
 </head>
 <body>
     <h1>Scraps Odds Calculator</h1>
-    <h2>It is your choice if you would like to take the risk of getting a item, both me and the Hack Club team highly advise doing the full hours instead of gambling!</h2>
-    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p>
-    <p>E.g., enter 50 instead of 50%.</p><br>
+    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p><br>
 
     <p>Price per roll:</p>
     <input type="text" id="PricePerRollInput" placeholder="Price per roll"> <br>
@@ -56,6 +81,13 @@
     <p id="Result"></p>
     <p id="Result2"></p>
     <p id="Result3"></p>
+
+    <br><br><br><br><br><br>
+    <a href="javascript:gaOptout()">Click here to opt-out of Google Analytics (click again to enable)</a>
+    <script>
+
+    </script>
+
 
     <!-- I know its not optimized but it work doesnt it? -->
     <!-- Max performance isnt needed for a script like this -->
@@ -125,6 +157,4 @@
     </script>
 </body>
 
-
 </html>
-
