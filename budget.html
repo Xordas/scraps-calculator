@@ -63,9 +63,7 @@
 </head>
 <body>
     <h1>Scraps Odds Calculator</h1>
-    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p>
-    <p>Click here to go to a budget limiting version that finds the optimal combination of upgrades and rolls within a fixed budget:</p>
-    <a href="budget">Budget Limited Version</a><br><br>
+    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p><br>
 
     <p>Price per roll:</p>
     <input type="text" id="PricePerRollInput" placeholder="Price per roll"> <br>
@@ -75,8 +73,8 @@
     <input type="text" id="PricePerUpgradeInput" placeholder="Price per upgrade"> <br>
     <p>Upgrade chance increase:</p>
     <input type="text" id="UpgradeChanceIncreaseInput" placeholder="Upgrade chance increase"> <br>
-    <p>Target chance:</p>
-    <input type="text" id="TargetChanceInput" placeholder="Target chance"> <br><br>
+    <p>Budget:</p>
+    <input type="text" id="BudgetInput" placeholder="Budget"> <br><br>
 
     <button class="Button" id="CalculateButton">Calculate</button>
 
@@ -100,23 +98,22 @@
             const DefaultRollChance = parseFloat(document.getElementById("DefaultRollChanceInput").value);
             const PricePerUpgrade = parseFloat(document.getElementById("PricePerUpgradeInput").value);
             const UpgradeChanceIncrease = parseFloat(document.getElementById("UpgradeChanceIncreaseInput").value);
-            const TargetChance = parseFloat(document.getElementById("TargetChanceInput").value);
+            const Budget = parseFloat(document.getElementById("BudgetInput").value);
 
             if (isNaN(PricePerRoll) || isNaN(DefaultRollChance) || isNaN(PricePerUpgrade) ||
-                isNaN(UpgradeChanceIncrease) || isNaN(TargetChance)) {
+                isNaN(UpgradeChanceIncrease) || isNaN(Budget)) {
                 document.getElementById("Result").textContent = "Please fill in all fields correctly.";
                 document.getElementById("Result2").textContent = "";
                 return;
             }
-
-            const TargetDecimal = TargetChance / 100;
-
-            let BestCost = Infinity;
+            // Fixed budget so just brute force all combinations that are within budget
+            let BestProbability = -1;
             let BestUpgrades = 0;
             let BestRolls = 0;
             let BestChancePerRoll = 0;
+            let BestCost = 0;
 
-            // Upgrade till 100% per roll or higher than target chance
+            // Maximum upgrades possible
             const MaxUpgrades = Math.ceil((100 - DefaultRollChance) / UpgradeChanceIncrease);
 
             for (let Upgrades = 0; Upgrades <= MaxUpgrades; Upgrades++) {
@@ -125,32 +122,44 @@
 
                 const P = ChancePerRoll / 100;
 
-                let RollsNeeded;
+                const costForUpgrades = Upgrades * PricePerUpgrade;
+                const remainingBudget = Budget - costForUpgrades;
 
-                if (P === 1) {
-                    RollsNeeded = 1;
-                } else {
-                    RollsNeeded = Math.ceil(
-                        Math.log(1 - TargetDecimal) / Math.log(1 - P)
-                    );
+                if (remainingBudget < PricePerRoll) {
+                    // Can't buy any rolls with this number of upgrades
+                    continue;
                 }
 
-                const TotalCost = (Upgrades * PricePerUpgrade) + (RollsNeeded * PricePerRoll);
+                const RollsCanBuy = Math.floor(remainingBudget / PricePerRoll);
 
-                if (TotalCost < BestCost) {
-                    BestCost = TotalCost;
+                const RollsBought = RollsCanBuy;
+
+                const successProbability = 1 - Math.pow(1 - P, RollsBought);
+
+                const totalCostUsed = costForUpgrades + (RollsBought * PricePerRoll);
+
+                // Prefer higher probability, if probabilities are equal, prefer lower cost
+                if (successProbability > BestProbability || (Math.abs(successProbability - BestProbability) < 1e-12 && totalCostUsed < BestCost)) {
+                    BestProbability = successProbability;
                     BestUpgrades = Upgrades;
-                    BestRolls = RollsNeeded;
+                    BestRolls = RollsBought;
                     BestChancePerRoll = ChancePerRoll;
+                    BestCost = totalCostUsed;
                 }
             }
 
-            document.getElementById("Result").textContent =
-                `Optimal strategy --> Upgrades: ${BestUpgrades}, Rolls: ${BestRolls}`;
+            if (BestProbability < 0) {
+                document.getElementById("Result").textContent = "Budget too small to buy any rolls with available upgrade choices.";
+                document.getElementById("Result2").textContent = "";
+                document.getElementById("Result3").textContent = "";
+                return;
+            }
+
+            document.getElementById("Result").textContent = `Optimal strategy --> Upgrades: ${BestUpgrades}, Rolls: ${BestRolls}`;
 
             document.getElementById("Result2").textContent =
-                `Total cost: ${BestCost.toFixed(2)} | Chance per roll: ${BestChancePerRoll.toFixed(2)}% | Total chance: ${( (1 - Math.pow(1 - (BestChancePerRoll / 100), BestRolls)) * 100 ).toFixed(2)}%`
-            
+                `Success chance: ${(BestProbability * 100).toFixed(2)}% | Cost used: ${BestCost.toFixed(2)} | Chance per roll: ${BestChancePerRoll.toFixed(2)}% | Leftover: ${(Budget - BestCost).toFixed(2)}`;
+
             document.getElementById("Result3").textContent =
                 `Hours: ${(BestCost / 14).toFixed(2)} (T1), ${(BestCost / 16).toFixed(2)} (T2), ${(BestCost / 20).toFixed(2)} (T3), ${(BestCost / 24).toFixed(2)} (T4)`;
         });
