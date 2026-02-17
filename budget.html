@@ -81,6 +81,7 @@
     <p id="Result"></p>
     <p id="Result2"></p>
     <p id="Result3"></p>
+    <p id="Result4"></p>
 
     <br><br><br><br><br><br>
     <a href="javascript:gaOptout()">Click here to opt-out of Google Analytics (click again to enable)</a>
@@ -100,58 +101,80 @@
             const UpgradeChanceIncrease = parseFloat(document.getElementById("UpgradeChanceIncreaseInput").value);
             const Budget = parseFloat(document.getElementById("BudgetInput").value);
 
-            if (isNaN(PricePerRoll) || isNaN(DefaultRollChance) || isNaN(PricePerUpgrade) ||
-                isNaN(UpgradeChanceIncrease) || isNaN(Budget)) {
-                document.getElementById("Result").textContent = "Please fill in all fields correctly.";
-                document.getElementById("Result2").textContent = "";
-                return;
-            }
-            // Fixed budget so just brute force all combinations that are within budget
             let BestProbability = -1;
             let BestUpgrades = 0;
             let BestRolls = 0;
             let BestChancePerRoll = 0;
             let BestCost = 0;
 
+            const EPS = 1e-6;
+
+            // Track compute time for funsies
+            const startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            let attempts = 0;
+
             // Maximum upgrades possible
             const MaxUpgrades = Math.ceil((100 - DefaultRollChance) / UpgradeChanceIncrease);
 
             for (let Upgrades = 0; Upgrades <= MaxUpgrades; Upgrades++) {
-                let ChancePerRoll = DefaultRollChance + (Upgrades * UpgradeChanceIncrease);
+                let ChancePerRoll = DefaultRollChance + Upgrades * UpgradeChanceIncrease;
                 if (ChancePerRoll > 100) ChancePerRoll = 100;
-
                 const P = ChancePerRoll / 100;
 
                 const costForUpgrades = Upgrades * PricePerUpgrade;
-                const remainingBudget = Budget - costForUpgrades;
 
-                if (remainingBudget < PricePerRoll) {
-                    // Can't buy any rolls with this number of upgrades
-                    continue;
-                }
+                // Maximum rolls possible with remaining budget
+                const MaxRolls = Math.floor((Budget - costForUpgrades) / PricePerRoll);
 
-                const RollsCanBuy = Math.floor(remainingBudget / PricePerRoll);
+                // Brute force every possible roll count, now THIS is real optimization
+                for (let RollsBought = 1; RollsBought <= MaxRolls; RollsBought++) {
+                    attempts += 1;
+                    let successProbability = 1 - Math.pow(1 - P, RollsBought);
 
-                const RollsBought = RollsCanBuy;
+                    // Anything above 99.5% is basically 100%, solves FP issues from before
+                    if (successProbability >= 0.995) successProbability = 1;
 
-                const successProbability = 1 - Math.pow(1 - P, RollsBought);
+                    const totalCostUsed = costForUpgrades + RollsBought * PricePerRoll;
 
-                const totalCostUsed = costForUpgrades + (RollsBought * PricePerRoll);
+                    // Skip if over budget (shouldn't happen but safe)
+                    if (totalCostUsed > Budget) continue;
 
-                // Prefer higher probability, if probabilities are equal, prefer lower cost
-                if (successProbability > BestProbability || (Math.abs(successProbability - BestProbability) < 1e-12 && totalCostUsed < BestCost)) {
-                    BestProbability = successProbability;
-                    BestUpgrades = Upgrades;
-                    BestRolls = RollsBought;
-                    BestChancePerRoll = ChancePerRoll;
-                    BestCost = totalCostUsed;
+                    // Update best
+                    if (
+                        successProbability > BestProbability || 
+                        (Math.abs(successProbability - BestProbability) < EPS && totalCostUsed < BestCost)
+                    ) {
+                        BestProbability = successProbability;
+                        BestUpgrades = Upgrades;
+                        BestRolls = RollsBought;
+                        BestChancePerRoll = ChancePerRoll;
+                        BestCost = totalCostUsed;
+
+                        //console.log(`New best: Upgrades ${Upgrades}, Rolls ${RollsBought}, Chance ${(successProbability*100).toFixed(2)}%, Cost ${totalCostUsed.toFixed(2)}`);
+                    }
                 }
             }
+
+            const endTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            const elapsedMs = endTime - startTime;
+
+            //console.log("=== Optimal Combination ===");
+            /*console.log({
+                Upgrades: BestUpgrades,
+                Rolls: BestRolls,
+               ChancePerRoll: BestChancePerRoll,
+               successProbability: BestProbability,
+                totalCostUsed: BestCost,
+                attempts: attempts,
+                elapsedMs: elapsedMs
+            });*/
+
 
             if (BestProbability < 0) {
                 document.getElementById("Result").textContent = "Budget too small to buy any rolls with available upgrade choices.";
                 document.getElementById("Result2").textContent = "";
                 document.getElementById("Result3").textContent = "";
+                document.getElementById("Result4").textContent = "";
                 return;
             }
 
@@ -162,6 +185,8 @@
 
             document.getElementById("Result3").textContent =
                 `Hours: ${(BestCost / 14).toFixed(2)} (T1), ${(BestCost / 16).toFixed(2)} (T2), ${(BestCost / 20).toFixed(2)} (T3), ${(BestCost / 24).toFixed(2)} (T4)`;
+
+            document.getElementById("Result4").textContent = `Compute time: ${elapsedMs.toFixed(2)} ms | Attempts: ${attempts}`;
         });
 
 
