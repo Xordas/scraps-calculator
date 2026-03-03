@@ -1,163 +1,264 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scraps Odds Calculator</title>
-    <style>
-        :root {
-        color-scheme: light dark; 
-        --bg-color: #ffffff;
-        --text-color: #1a1a1a;
-        --bg-color-button: #7c7c7c; 
-        --text-color-button: #1a1a1a; 
-        }
-
-        @media (prefers-color-scheme: dark) {
-        :root {
-            --bg-color: #1a1a1a;
-            --text-color: #f5f5f5; 
-            --bg-color-button: rgb(59, 59, 59);
-            --text-color-button: #f5f5f5;
-            /* waow dark mode!!! */
-        }
-        }
-
-        body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        }
-
-        .Button {
-        background-color: var(--bg-color-button);
-        color: var(--text-color-button);
-        }
-    </style>
-
-    <script>
-        if (localStorage.getItem("ga_disabled") !== "1") {
-            const script = document.createElement("script");
-            script.async = true;
-            script.src = `https://www.googletagmanager.com/gtag/js?id=G-TXDF9RQ82V`;
-            document.head.appendChild(script);
-
-            window.dataLayer = window.dataLayer || [];
-            window.gtag = window.gtag || function(){dataLayer.push(arguments);};
-
-            gtag('js', new Date());
-            gtag('config', 'G-TXDF9RQ82V');
-        }
-
-        function gaOptout() {
-            if (localStorage.getItem("ga_disabled") !== "1") {
-                localStorage.setItem("ga_disabled", "1");
-                alert("Google Analytics has been disabled. Please refresh the page for the changes to take effect.");
-            } else if (localStorage.getItem("ga_disabled") === "1") {
-                localStorage.setItem("ga_disabled", "0");
-                alert("Google Analytics has been enabled. Please refresh the page for the changes to take effect.");
-
-            }
-        }
-    </script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scraps Odds Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://scraps.hackclub.com/fonts/PhantomSans_Regular.woff" /> <!--font robbery haha-->
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .ga-toggle-btn {
+      margin-left: 12px;
+      background: none;
+      border: 1px solid rgba(255,255,255,.06);
+      color: rgba(200,200,200,.9);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .ga-toggle-btn:hover { color: #fff; border-color: rgba(255,255,255,.14); }
+    .ga-bottom-left {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      z-index: 1200;
+      margin-left: 0;
+      background: rgba(255,255,255,0.02);
+    }
+    #countdown {
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 10px;
+      z-index: 2000;
+      font-weight: 700;
+      font-size: 14px;
+      font-family: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+  </style>
 </head>
 <body>
-    <h1> This website is no longer accurate as formulas have changed, this will be updated asap!<h1></h1>
-    <h1>Scraps Odds Calculator</h1>
-    <p>Do not write percentages, write just the number instead (im too lazy to add input validation)</p>
-    <p>Click here to go to a budget limiting version that finds the optimal combination of upgrades and rolls within a fixed budget:</p>
-    <a href="budget">Budget Limited Version</a><br><br>
 
-    <p>Price per roll:</p>
-    <input type="text" id="PricePerRollInput" placeholder="Price per roll"> <br>
-    <p>Default roll chance:</p>
-    <input type="text" id="DefaultRollChanceInput" placeholder="Default roll chance"> <br>
-    <p>Price per upgrade:</p>
-    <input type="text" id="PricePerUpgradeInput" placeholder="Price per upgrade"> <br>
-    <p>Upgrade chance increase:</p>
-    <input type="text" id="UpgradeChanceIncreaseInput" placeholder="Upgrade chance increase"> <br>
-    <p>Target chance:</p>
-    <input type="text" id="TargetChanceInput" placeholder="Target chance"> <br><br>
+<div id="countdown">Time till scraps end: <span id="countDownValue">Loading</span></div>
 
-    <button class="Button" id="CalculateButton">Calculate</button>
+<a href="shop.html" class="shop-link-btn">
+  <span>browse shop (its cool i swear)</span>
+  <span>→</span>
+</a>
 
-    <p id="Result"></p>
-    <p id="Result2"></p>
-    <p id="Result3"></p>
+<div class="page">
+  <div class="greeting">
+    <h1>scraps odds calculator</h1>
+    <p>one hundred bajillion percent better than the other scraps calculator btw</p>
+  </div>
 
-    <br><br><br><br><br><br>
-    <a href="javascript:gaOptout()">Click here to opt-out of Google Analytics (click again to enable)</a>
-    <script>
+  <div class="mode-tabs" id="modeTabs">
+    <button class="mode-tab" id="tab-general" onclick="setMode('general')">general best</button>
+    <button class="mode-tab" id="tab-target" onclick="setMode('target')">target chance</button>
+    <button class="mode-tab" id="tab-budget" onclick="setMode('budget')">budget limit</button>
+  </div>
 
-    </script>
+  <div class="main-grid" id="mainGrid">
+    <div class="project-card dashed">
+      <div class="card-preview">
+        <div class="card-preview-form" id="formWrap">
+          <div class="item-picker" id="itemPicker">
+            <label class="form-label">autofill from shop</label>
+            <input type="text" class="item-search-input" id="itemSearchInput" placeholder="search items…" autocomplete="off" />
+            <div class="item-dropdown" id="itemDropdown"></div>
+          </div>
+          <div class="form-divider"></div>
+          <div class="form-field">
+            <label class="form-label">price per roll</label>
+            <input class="form-input" type="number" id="PricePerRollInput" placeholder="e.g. 10" min="0" step="any" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">default roll chance (%)</label>
+            <input class="form-input" type="number" id="DefaultRollChanceInput" placeholder="e.g. 15" min="0" max="100" step="any" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">price per upgrade</label>
+            <input class="form-input" type="number" id="PricePerUpgradeInput" placeholder="e.g. 50" min="0" step="any" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">upgrade chance increase (%)</label>
+            <input class="form-input" type="number" id="UpgradeChanceIncreaseInput" placeholder="e.g. 5" min="0" step="any" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">item price (optional, enables pity)</label>
+            <input class="form-input" type="number" id="ItemPriceInput" placeholder="e.g. 500" min="0" step="any" />
+          </div>
+
+          <div class="form-field field-target">
+            <label class="form-label">target success chance (%)</label>
+            <input class="form-input" type="number" id="TargetChanceInput" placeholder="e.g. 90" min="0" max="100" step="any" />
+          </div>
+          <div class="form-field field-budget">
+            <label class="form-label">budget</label>
+            <input class="form-input" type="number" id="BudgetInput" placeholder="e.g. 300" min="0" step="any" />
+          </div>
+
+          <div class="form-divider"></div>
+          <button class="calc-btn" id="CalculateButton" onclick="calculate()">calculate</button>
+          <div class="error-msg" id="errorMsg"></div>
+        </div>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="empty-card" id="emptyCard">
+        <div class="empty-icon"></div>
+        <strong>fill in the parameters</strong>
+        <span>results, charts, and a step by step breakdown will appear here</span>
+      </div>
+      <div id="resultsSection">
+
+        <div class="stats-row">
+          <div class="stat-tile tile-green" id="st-prob" style="transition-delay:.00s">
+            <div class="stat-tile-label">Success Chance</div>
+            <div class="stat-tile-value" id="sv-prob">—</div>
+            <div class="prob-bar">
+              <div class="bar-track"><div class="bar-fill bar-prob" id="probBar"></div></div>
+              <div class="bar-labels"><span>0%</span><span>100%</span></div>
+            </div>
+          </div>
+          <div class="stat-tile tile-blue" id="st-upgrades" style="transition-delay:.05s">
+            <div class="stat-tile-label">Upgrades</div>
+            <div class="stat-tile-value" id="sv-upgrades">—</div>
+            <div class="stat-tile-sub" id="sv-upgrsub">—</div>
+          </div>
+          <div class="stat-tile tile-purple" id="st-rolls" style="transition-delay:.10s">
+            <div class="stat-tile-label">Rolls</div>
+            <div class="stat-tile-value" id="sv-rolls">—</div>
+            <div class="stat-tile-sub" id="sv-rollsub">—</div>
+          </div>
+          <div class="stat-tile tile-orange" id="st-cost" style="transition-delay:.15s">
+            <div class="stat-tile-label" id="costLbl">Total Cost</div>
+            <div class="stat-tile-value" id="sv-cost">—</div>
+            <div class="stat-tile-sub" id="sv-costsub">—</div>
+          </div>
+        </div>
 
 
-    <!-- I know its not optimized but it work doesnt it? -->
-    <!-- Max performance isnt needed for a script like this -->
-    <script>
+        <div class="chart-card">
+          <div class="chart-card-title">total success probability vs rolls</div>
+          <div class="chart-wrap"><canvas id="probChart"></canvas></div>
+        </div>
+        <div class="tier-card">
+          <div class="chart-card-title">equivalent hours</div>
+          <div class="tier-row">
+            <div class="tier-cell">
+              <div class="tier-name">tier 1</div>
+              <div class="tier-val" id="t1">—</div>
+              <div class="tier-rate">14 scraps/hr</div>
+            </div>
+            <div class="tier-cell">
+              <div class="tier-name">tier 2</div>
+              <div class="tier-val" id="t2">—</div>
+              <div class="tier-rate">16 scraps/hr</div>
+            </div>
+            <div class="tier-cell">
+              <div class="tier-name">tier 3</div>
+              <div class="tier-val" id="t3">—</div>
+              <div class="tier-rate">20 scraps/hr</div>
+            </div>
+            <div class="tier-cell">
+              <div class="tier-name">tier 4</div>
+              <div class="tier-val" id="t4">—</div>
+              <div class="tier-rate">24 scraps/hr</div>
+            </div>
+          </div>
+        </div>
 
-        document.getElementById("CalculateButton").addEventListener("click", function() {
-            const PricePerRoll = parseFloat(document.getElementById("PricePerRollInput").value);
-            const DefaultRollChance = parseFloat(document.getElementById("DefaultRollChanceInput").value);
-            const PricePerUpgrade = parseFloat(document.getElementById("PricePerUpgradeInput").value);
-            const UpgradeChanceIncrease = parseFloat(document.getElementById("UpgradeChanceIncreaseInput").value);
-            const TargetChance = parseFloat(document.getElementById("TargetChanceInput").value);
-
-            if (isNaN(PricePerRoll) || isNaN(DefaultRollChance) || isNaN(PricePerUpgrade) ||
-                isNaN(UpgradeChanceIncrease) || isNaN(TargetChance)) {
-                document.getElementById("Result").textContent = "Please fill in all fields correctly.";
-                document.getElementById("Result2").textContent = "";
-                return;
-            }
-
-            const TargetDecimal = TargetChance / 100;
-
-            let BestCost = Infinity;
-            let BestUpgrades = 0;
-            let BestRolls = 0;
-            let BestChancePerRoll = 0;
-
-            // Upgrade till 100% per roll or higher than target chance
-            const MaxUpgrades = Math.ceil((100 - DefaultRollChance) / UpgradeChanceIncrease);
-
-            for (let Upgrades = 0; Upgrades <= MaxUpgrades; Upgrades++) {
-                let ChancePerRoll = DefaultRollChance + (Upgrades * UpgradeChanceIncrease);
-                if (ChancePerRoll > 100) ChancePerRoll = 100;
-
-                const P = ChancePerRoll / 100;
-
-                let RollsNeeded;
-
-                if (P === 1) {
-                    RollsNeeded = 1;
-                } else {
-                    RollsNeeded = Math.ceil(
-                        Math.log(1 - TargetDecimal) / Math.log(1 - P)
-                    );
-                }
-
-                const TotalCost = (Upgrades * PricePerUpgrade) + (RollsNeeded * PricePerRoll);
-
-                if (TotalCost < BestCost) {
-                    BestCost = TotalCost;
-                    BestUpgrades = Upgrades;
-                    BestRolls = RollsNeeded;
-                    BestChancePerRoll = ChancePerRoll;
-                }
-            }
-
-            document.getElementById("Result").textContent =
-                `Optimal strategy --> Upgrades: ${BestUpgrades}, Rolls: ${BestRolls}`;
-
-            document.getElementById("Result2").textContent =
-                `Total cost: ${BestCost.toFixed(2)} | Chance per roll: ${BestChancePerRoll.toFixed(2)}% | Total chance: ${( (1 - Math.pow(1 - (BestChancePerRoll / 100), BestRolls)) * 100 ).toFixed(2)}%`
-            
-            document.getElementById("Result3").textContent =
-                `Hours: ${(BestCost / 14).toFixed(2)} (T1), ${(BestCost / 16).toFixed(2)} (T2), ${(BestCost / 20).toFixed(2)} (T3), ${(BestCost / 24).toFixed(2)} (T4)`;
-        });
+        <div class="budget-card" id="budgetCard">
+          <div class="chart-card-title">budget usage</div>
+          <div class="bar-track" style="height:7px;margin-top:10px">
+            <div class="bar-fill bar-budget" id="budgetBar"></div>
+          </div>
+          <div class="budget-row">
+            <span id="budgetUsedLbl">Used: —</span>
+            <span id="budgetLeftLbl">Left: —</span>
+          </div>
+        </div> 
 
 
-    </script>
+        <div class="steps-card">
+          <div class="chart-card-title">step by step</div>
+          <div class="steps-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Action</th><th>Type</th><th>Cost</th><th>Total</th><th>Chance of Win</th></tr></thead>
+              <tbody id="StepsBody"></tbody>
+            </table>
+          </div>
+          <div class="compute-info" id="computeInfo"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    function updateCountdown(){
+      const year = new Date().getFullYear();
+      const diff = Date.UTC(year, 2, 14, 0, 0, 0) - Date.now();
+      const sign = diff < 0 ? '-' : ''; // make it able to go into the negatives for fun
+      const days = Math.floor(Math.abs(diff) / 86400000);
+      const hours = Math.floor((Math.abs(diff) % 86400000) / 3600000);
+      const minutes = Math.floor((Math.abs(diff) % 3600000) / 60000);
+      const seconds = Math.floor((Math.abs(diff) % 60000) / 1000);
+      const el = document.getElementById('countDownValue');
+      countDownValue.textContent = `${sign}${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    });
+  })();
+</script>
+
+<script>
+  if (localStorage.getItem("ga_disabled") !== "1") {
+    const s = document.createElement("script");
+    s.async = true; s.src = "https://www.googletagmanager.com/gtag/js?id=G-TXDF9RQ82V";
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ dataLayer.push(arguments); };
+    gtag('js', new Date()); gtag('config', 'G-TXDF9RQ82V');
+  }
+  function gaOptout() {
+    const d = localStorage.getItem("ga_disabled") === "1";
+    localStorage.setItem("ga_disabled", d ? "0" : "1");
+    const msg = d ? "Google Analytics re-enabled. Refresh to apply." : "Google Analytics disabled. Refresh to apply.";
+    alert(msg);
+    // update button
+    try { updateGABtn(); } catch(e) {}
+  }
+
+  function updateGABtn() {
+    const btn = document.getElementById('gaToggle');
+    if (!btn) return;
+    const disabled = localStorage.getItem('ga_disabled') === '1';
+    btn.textContent = disabled ? 'Opt in to Google Analytics' : 'Opt out of Google Analytics';
+    btn.title = disabled ? 'Click to enable Google Analytics' : 'Click to disable Google Analytics';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    updateGABtn();
+  });
+</script>
+
+<script src="calc.js"></script>
+
+<button id="gaToggle" class="ga-toggle-btn ga-bottom-left" onclick="gaOptout(); updateGABtn();">Toggle GA</button>
+<div class="meow">:3</div>
 </body>
-
 </html>
