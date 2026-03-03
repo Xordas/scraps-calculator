@@ -35,7 +35,7 @@
 
   async function loadItems() {
     try { // Cors :(
-      const res = await fetch('https://corsproxy.io/?url=https://api.scraps.hackclub.com/shop/items');
+      const res = await fetch('https://cors-anywhere.com/https://api.scraps.hackclub.com/shop/items');
       const raw = await res.json();
       shopItems = raw.map(i => ({
         name: i.name,

@@ -635,7 +635,6 @@
 	// the same abbreviations as calc.js, look in the comment there if needed
 	// its pretty much copy and paste lmao
 	// might be some leftover code from when i was planning to auto fetch user data, ignore if there is
-		const CORS = "https://corsproxy.io/?url=";
 		const sortOptions = [
 			{ key: "default", label: "default" },
 			{ key: "probability", label: "probability" },
@@ -651,11 +650,6 @@
 			sortMode: "probability",
 			budget: 0
 		};
-
-		/* used when i was planning to auto fetch user data, not gonna remove even though its only used for 1 thing now */
-		function withCors(url) {
-			return CORS + encodeURIComponent(url);
-		}
 
 		function rollCostTotal(ppr, r) {
 			if (r <= 0) return 0;
@@ -873,9 +867,8 @@
 			document.body.style.overflow = "";
 		}
 		
-		/* litterally the only place that withcors is used */
 		async function loadItems() {
-			const res = await fetch(withCors("https://api.scraps.hackclub.com/shop/items"));
+			const res = await fetch("https://cors-anywhere.com/https://api.scraps.hackclub.com/shop/items");
 			if (!res.ok) throw new Error("Failed to load items");
 			const data = await res.json();
 			state.items = data;
