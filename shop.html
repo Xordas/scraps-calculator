@@ -869,7 +869,7 @@
 		
 		async function loadItems() {
 			const res = await fetch("https://cors-anywhere.com/https://api.scraps.hackclub.com/shop/items");
-			if (!res.ok) throw new Error("Failed to load items");
+			if (!res.ok) throw new Error("Failed to load items, try reloading the page");
 			const data = await res.json();
 			state.items = data;
 			MakeTags();
@@ -1060,7 +1060,7 @@
 			try {
 				await loadItems();
 			} catch (err) {
-				document.getElementById("shopGrid").innerHTML = "<div class='shop-empty'>failed to load items</div>";
+				document.getElementById("shopGrid").innerHTML = "<div class='shop-empty'>failed to load items, try reloading the page</div>";
 				return;
 			}
 

@@ -61,7 +61,7 @@
     const filtered = q ? shopItems.filter(item => item.name.toLowerCase().includes(q)) : shopItems;
     
     if (filtered.length === 0) {
-      dropdown.innerHTML = '<div class="item-dropdown-empty">no items found</div>';
+      dropdown.innerHTML = '<div class="item-dropdown-empty">no items found, try refreshing the page</div>';
       return;
     }
     
