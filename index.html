@@ -209,7 +209,7 @@
   (function(){
     function updateCountdown(){
       const year = new Date().getFullYear();
-      const diff = Date.UTC(year, 2, 14, 0, 0, 0) - Date.now();
+      const diff = Date.UTC(year, 2, 16, 0, 0, 0) - Date.now();
       const sign = diff < 0 ? '-' : ''; // make it able to go into the negatives for fun
       const days = Math.floor(Math.abs(diff) / 86400000);
       const hours = Math.floor((Math.abs(diff) % 86400000) / 3600000);
@@ -262,3 +262,4 @@
 <div class="meow">:3</div>
 </body>
 </html>
+
